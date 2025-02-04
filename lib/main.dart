@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hive/hive.dart';
@@ -5,8 +6,17 @@ import 'package:hive_flutter/adapters.dart';
 import 'package:todotask/screens/splashScreen.dart';
 import 'package:todotask/screens/taskClass.dart';
 import 'package:todotask/utils/fonts.dart';
-
+Future<void> checkInternet() async {
+  var connectivityResult = await Connectivity().checkConnectivity();
+  if (connectivityResult == ConnectivityResult.mobile ||
+      connectivityResult == ConnectivityResult.wifi) {
+    print("متصل به اینترنت");
+  } else {
+    print("عدم دسترسی به اینترنت");
+  }
+}
 void main() async{
+  
     WidgetsFlutterBinding.ensureInitialized();
   
   // مقداردهی اولیه Hive

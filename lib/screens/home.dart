@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:todotask/main.dart';
 import 'package:todotask/screens/api.dart';
 import 'package:todotask/screens/editCard.dart';
 import 'package:todotask/screens/taskClass.dart';
@@ -40,16 +41,18 @@ class _HomeState extends State<Home> {
         setState(() {
           tasks = fetchedTasks;
         });
+        print(isOnline);
       } catch (e) {
+        var box = Hive.box<Task>('tasksBox');
+        setState(() {
+          tasks = box.values.toList();
+        });
         print("Error fetching tasks: $e");
       }
-    } else {
-      var box = Hive.box<Task>('tasksBox');
-      setState(() {
-        tasks = box.values.toList();
-      });
     }
   }
+
+  bool _left = false;
 
   Future<void> _addTask() async {
     Task newTask =
@@ -57,6 +60,11 @@ class _HomeState extends State<Home> {
     await taskService.createTask(newTask);
     _loadTasks();
     Navigator.pop(context);
+  }
+
+  Future<void> _deleteTask(Task task) async {
+    await taskService.deleteTask(task.id!);
+    _loadTasks();
   }
 
   Future<void> _toggleTaskStatus(Task task) async {
@@ -82,7 +90,11 @@ class _HomeState extends State<Home> {
               foregroundColor: black,
               shape: CircleBorder(),
               child: Icon(CupertinoIcons.delete_solid),
-              onPressed: () {},
+              onPressed: () {
+                setState(() {
+                  _left = !_left;
+                });
+              },
             ),
             SizedBox(
               height: 10,
@@ -93,6 +105,7 @@ class _HomeState extends State<Home> {
               shape: CircleBorder(),
               child: Icon(CupertinoIcons.add),
               onPressed: () {
+                checkInternet();
                 showModalBottomSheet(
                     context: context,
                     builder: (context) {
@@ -111,6 +124,14 @@ class _HomeState extends State<Home> {
                 fontSize: 90.w, color: white, fontWeight: FontWeight.w700),
           ),
           centerTitle: true,
+          actions: [
+            IconButton(
+                onPressed: _loadTasks,
+                icon: Icon(
+                  CupertinoIcons.refresh,
+                  color: white,
+                ))
+          ],
         ),
         body: tasks.isEmpty
             ? Center(
@@ -188,7 +209,7 @@ class _HomeState extends State<Home> {
   Widget _buildTaskCard(Task task) {
     return Container(
       padding: EdgeInsets.all(10),
-      margin: const EdgeInsets.all(10),
+      margin: EdgeInsets.only(bottom: 10, left: 10, right: 10, top: 10),
       width: 1011.w,
       height: 233.h,
       alignment: Alignment.center,
@@ -209,10 +230,19 @@ class _HomeState extends State<Home> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             IconButton(
-              onPressed: () => _toggleTaskStatus(task),
+              onPressed: () =>
+                  _left ? _deleteTask(task) : _toggleTaskStatus(task),
               icon: Icon(
-                task.status ? Icons.done : Icons.cancel_outlined,
-                color: task.person ? blue : pink,
+                _left
+                    ? Icons.delete
+                    : task.status
+                        ? Icons.done
+                        : Icons.cancel_outlined,
+                color: _left
+                    ? white
+                    : task.person
+                        ? blue
+                        : pink,
                 size: 90.w,
               ),
             ),
